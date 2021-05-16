@@ -18,9 +18,10 @@ const Auc2 = {
 const Bid2 = {
     ...Defaults,
     placedBid: Fun([Address, UInt], Null),
-    mayBid: Fun([UInt], Bool),
+    mayBid: Fun([UInt,UInt], Bool),
     //printInfoBid: Fun([], Null),
     getBid: Fun([], UInt),
+    bidChanged: Fun([UInt], Null),
 };
 
 export const main =
@@ -56,13 +57,17 @@ export const main =
                 .invariant(balance() == currentPot)
                 .while(keepGoing() && auctionRunning)
                 .case(Bid, (() => {
-                        Bid.only(() => interact.placedBid(mbid[1], currentPot));
-                        Auc.only(() => interact.updateInterface(currentPot));
+                        //const a = interact.placedBid(mbid[1], currentPot));
+                        //Auc.only(() => interact.updateInterface(currentPot));
+                        //declassify(interact.bidChanged(currentPot));
+                        const bbid = declassify(interact.getBid());
+                        const mbid = bbid + currentPot;
 
-                        const mbid = declassify(interact.getBid()) + currentPot;
                         const address = this;
+
+                        //interact.placedBid(address, currentPot);
                         return ({
-                            when: declassify(interact.mayBid(mbid)),
+                            when: declassify(interact.mayBid(mbid,bbid)),
                             msg: [mbid,address]
                         });
                     }),
@@ -71,9 +76,14 @@ export const main =
                         const bidValue = mbid[0];
                         //deadline = deadline+2;
                         const updatedPotValue = bidValue;
+                        
+
                         Bid.only(() => interact.placedBid(mbid[1], updatedPotValue));
                         Auc.only(() => interact.updateInterface(updatedPotValue));
-
+                        each([Bid, Bid], () => {
+                            interact.placedBid(mbid[1], updatedPotValue);
+                        });
+                       
                         transfer(currentPot).to(winnerAddress);
                         return [ updatedPotValue, true, mbid[1] ];
                     }))
@@ -85,8 +95,11 @@ export const main =
                     });
             //Auctioneer.only(() => interact.printInfoAuc());
             //Bidder.only(() => interact.printInfoBid());
-                        
-            transfer(currentPot).to(winnerAddress);
+            commit();
+            Auc.only(() => {
+                const aucadd = this});
+            Auc.publish(aucadd);           
+            transfer(currentPot).to(aucadd);
             auctionEnds(winnerAddress);
             commit();
         }
